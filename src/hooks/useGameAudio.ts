@@ -1,6 +1,6 @@
 /**
  * useGameAudio Hook
- * Manages game sound effects using Web Audio API for Othello
+ * Manages game sound effects using Web Audio API for Gomoku
  * Designed by M. Cooper for www.mcooper.com
  */
 
@@ -16,7 +16,7 @@ type WebkitWindow = Window &
 
 export function useGameAudio() {
   const [isMuted, setIsMuted] = useState(() => {
-    return localStorage.getItem('othello-audio-muted') === 'true'
+    return localStorage.getItem('gomoku-audio-muted') === 'true'
   })
 
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -45,7 +45,7 @@ export function useGameAudio() {
   const toggleMute = useCallback(() => {
     setIsMuted(prev => {
       const newValue = !prev
-      localStorage.setItem('othello-audio-muted', String(newValue))
+      localStorage.setItem('gomoku-audio-muted', String(newValue))
       return newValue
     })
   }, [])

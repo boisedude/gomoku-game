@@ -8,7 +8,7 @@ import { getCharacterById } from '../../../shared/characters'
 import type { Character, CharacterId } from '../../../shared/characters'
 import type { Difficulty } from '@/types/gomoku.types'
 
-// Map Othello difficulty to character IDs
+// Map Gomoku difficulty to character IDs
 const difficultyToCharacter: Record<Difficulty, CharacterId> = {
   easy: 'bella',
   medium: 'coop',

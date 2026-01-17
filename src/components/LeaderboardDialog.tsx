@@ -1,6 +1,6 @@
 /**
  * Leaderboard Dialog Component
- * Displays player statistics vs Coop with Othello-specific metrics
+ * Displays player statistics vs AI with Gomoku-specific metrics
  */
 
 import { useState } from 'react'

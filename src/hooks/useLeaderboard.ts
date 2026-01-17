@@ -1,12 +1,12 @@
 /**
  * Leaderboard Hook
- * Manages player statistics and leaderboard for Othello
+ * Manages player statistics and leaderboard for Gomoku
  */
 
 import { useState, useEffect, useCallback } from 'react'
 import type { LeaderboardEntry } from '@/types/gomoku.types'
 
-const STORAGE_KEY = 'othello-leaderboard'
+const STORAGE_KEY = 'gomoku-leaderboard'
 const DEFAULT_PLAYER_NAME = 'Player'
 
 /**

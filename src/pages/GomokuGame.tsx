@@ -3,7 +3,7 @@
  * Main game interface for Gomoku (Five in a Row)
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Board } from '@/components/Board'
 import { GameControls } from '@/components/GameControls'
 import { VictoryDialog } from '@/components/VictoryDialog'
@@ -30,10 +30,12 @@ export function GomokuGame() {
 
   const [showVictoryDialog, setShowVictoryDialog] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
-  const [prevStatus, setPrevStatus] = useState(gameState.status)
+  const prevStatusRef = useRef(gameState.status)
 
-  // Detect game end
+  // Detect game end - using ref to avoid setState in useEffect
   useEffect(() => {
+    const prevStatus = prevStatusRef.current
+
     if (prevStatus === 'playing' && gameState.status !== 'playing') {
       const totalMoves = gameState.moveHistory.length
 
@@ -55,12 +57,11 @@ export function GomokuGame() {
       setShowVictoryDialog(true)
     }
 
-    setPrevStatus(gameState.status)
+    prevStatusRef.current = gameState.status
   }, [
     gameState.status,
     gameState.winner,
     gameState.moveHistory.length,
-    prevStatus,
     playVictory,
     playDefeat,
     playDraw,
