@@ -2,6 +2,7 @@
   "name": "gomoku-game",
   "private": true,
   "version": "1.0.0",
+  "license": "MIT",
   "description": "Gomoku - Five in a Row! Classic strategy game where you connect 5 stones in a row. Challenge AI opponents! Built with React 19, TypeScript, and smooth animations.",
   "author": "M. Cooper (www.mcooper.com)",
   "keywords": [
