@@ -13,9 +13,7 @@ import {
   isEmpty,
 } from '@/lib/gomokuRules'
 import { getAIMove } from '@/lib/aiStrategies'
-
-const AI_MOVE_DELAY = 600 // ms
-const MOVE_ANIMATION_DELAY = 200 // ms
+import { AI_MOVE_DELAY_MS, MOVE_ANIMATION_DELAY_MS } from '@/constants/gameConstants'
 
 export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
   const [gameState, setGameState] = useState<GameState>(() =>
@@ -84,22 +82,22 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
                     lastMove: move,
                     ...counts,
                   }
-                } catch (error) {
-                  console.error('AI move execution failed:', error)
+                } catch {
+                  // AI move execution failed - return previous state to maintain game integrity
                   return prevState
                 }
               })
               setIsAnimating(false)
               animationTimeoutRef.current = null
-            }, MOVE_ANIMATION_DELAY)
+            }, MOVE_ANIMATION_DELAY_MS)
           }
-        } catch (error) {
-          console.error('AI move failed:', error)
+        } catch {
+          // AI move calculation failed - reset animation state
           setIsAnimating(false)
         } finally {
           aiMoveScheduledRef.current = false
         }
-      }, AI_MOVE_DELAY)
+      }, AI_MOVE_DELAY_MS)
     }
 
     return () => {
@@ -167,14 +165,14 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
               lastMove: move,
               ...counts,
             }
-          } catch (error) {
-            console.error('Move execution failed:', error)
+          } catch {
+            // Move execution failed - return previous state to maintain game integrity
             return prevState
           }
         })
         setIsAnimating(false)
         animationTimeoutRef.current = null
-      }, MOVE_ANIMATION_DELAY)
+      }, MOVE_ANIMATION_DELAY_MS)
     },
     [gameState.board, gameState.status, gameState.currentPlayer, isAnimating]
   )

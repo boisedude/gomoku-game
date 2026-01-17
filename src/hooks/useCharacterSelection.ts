@@ -6,7 +6,7 @@
 import { useState, useCallback } from 'react'
 import { getCharacterById } from '../../../shared/characters'
 import type { Character, CharacterId } from '../../../shared/characters'
-import type { Difficulty } from '@/types/checkers.types'
+import type { Difficulty } from '@/types/gomoku.types'
 
 // Map Othello difficulty to character IDs
 const difficultyToCharacter: Record<Difficulty, CharacterId> = {

@@ -13,6 +13,15 @@ import type {
   Direction,
 } from '@/types/gomoku.types'
 import { BOARD_SIZE } from '@/types/gomoku.types'
+import {
+  SCORE_FIVE,
+  SCORE_OPEN_FOUR,
+  SCORE_FOUR,
+  SCORE_OPEN_THREE,
+  SCORE_THREE,
+  SCORE_TWO,
+  WIN_LENGTH,
+} from '@/constants/gameConstants'
 
 /**
  * Creates an empty 15x15 board
@@ -120,8 +129,8 @@ export function checkWin(board: Board, position: Position, player: Player): {
       player
     )
 
-    if (count >= 5) {
-      return { isWin: true, winningLine: positions.slice(0, 5) }
+    if (count >= WIN_LENGTH) {
+      return { isWin: true, winningLine: positions.slice(0, WIN_LENGTH) }
     }
   }
 
@@ -187,22 +196,22 @@ export function detectPattern(
   }
 
   // Classify pattern
-  if (consecutive >= 5) {
-    return { type: 'five', direction, positions, score: 1000000 }
+  if (consecutive >= WIN_LENGTH) {
+    return { type: 'five', direction, positions, score: SCORE_FIVE }
   } else if (consecutive === 4) {
     if (openEnds === 2) {
-      return { type: 'open-four', direction, positions, score: 10000 }
+      return { type: 'open-four', direction, positions, score: SCORE_OPEN_FOUR }
     } else if (openEnds === 1) {
-      return { type: 'four', direction, positions, score: 1000 }
+      return { type: 'four', direction, positions, score: SCORE_FOUR }
     }
   } else if (consecutive === 3) {
     if (openEnds === 2) {
-      return { type: 'open-three', direction, positions, score: 500 }
+      return { type: 'open-three', direction, positions, score: SCORE_OPEN_THREE }
     } else if (openEnds === 1) {
-      return { type: 'three', direction, positions, score: 100 }
+      return { type: 'three', direction, positions, score: SCORE_THREE }
     }
   } else if (consecutive === 2 && openEnds > 0) {
-    return { type: 'two', direction, positions, score: 10 }
+    return { type: 'two', direction, positions, score: SCORE_TWO }
   }
 
   return null

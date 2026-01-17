@@ -58,10 +58,11 @@ export interface LeaderboardEntry {
   draws: number
   winStreak: number
   longestWinStreak: number
-  totalMoves: number // Total moves made
-  fastestWin: number // Fewest moves to win
-  totalGames: number
+  totalCaptures: number // Best winning margin (stones difference)
+  kingsCreated: number // Total stones placed across all games
   perfectGames: number // Games won with no opponent threats
+  totalGames: number
+  multiJumps: number // Total moves made across all games
 }
 
 // Saved game state

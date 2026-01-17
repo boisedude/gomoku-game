@@ -10,12 +10,30 @@ import {
   evaluatePosition,
   getRelevantPositions,
 } from '@/lib/gomokuRules'
+import {
+  AI_EASY_SEARCH_RANGE,
+  AI_MEDIUM_HARD_SEARCH_RANGE,
+  AI_HARD_MOVE_WEIGHTS,
+  AI_HARD_TOP_MOVES_COUNT,
+  BONUS_WINNING_MOVE,
+  BONUS_BLOCK_WIN,
+  BONUS_OPEN_FOUR_MULTIPLIER,
+  BONUS_FOUR_MULTIPLIER,
+  BONUS_OPEN_THREE_MULTIPLIER,
+  BONUS_BLOCK_OPEN_FOUR,
+  BONUS_BLOCK_FOUR,
+  MEDIUM_AI_OPPONENT_PATTERN_MULTIPLIER,
+  HARD_AI_OWN_PATTERN_MULTIPLIER,
+  HARD_AI_OPPONENT_PATTERN_MULTIPLIER,
+  SCORE_FIVE,
+  MOVE_EVAL_OPPONENT_MULTIPLIER,
+} from '@/constants/gameConstants'
 
 /**
  * Easy AI: Random move from available positions
  */
 function getEasyMove(board: Board): Position | null {
-  const relevantPositions = getRelevantPositions(board, 3)
+  const relevantPositions = getRelevantPositions(board, AI_EASY_SEARCH_RANGE)
   if (relevantPositions.length === 0) return null
 
   // Pick random position
@@ -27,7 +45,7 @@ function getEasyMove(board: Board): Position | null {
  */
 function getMediumMove(board: Board, player: Player): Position | null {
   const opponent = player === 1 ? 2 : 1
-  const relevantPositions = getRelevantPositions(board, 2)
+  const relevantPositions = getRelevantPositions(board, AI_MEDIUM_HARD_SEARCH_RANGE)
 
   if (relevantPositions.length === 0) return null
 
@@ -61,7 +79,7 @@ function getMediumMove(board: Board, player: Player): Position | null {
     const opponentScore = opponentPatterns.reduce((sum, p) => sum + p.score, 0)
 
     // Prioritize blocking opponent threats
-    const totalScore = myScore + opponentScore * 1.2
+    const totalScore = myScore + opponentScore * MEDIUM_AI_OPPONENT_PATTERN_MULTIPLIER
 
     if (totalScore > bestScore) {
       bestScore = totalScore
@@ -77,7 +95,7 @@ function getMediumMove(board: Board, player: Player): Position | null {
  */
 function getHardMove(board: Board, player: Player): Position | null {
   const opponent = player === 1 ? 2 : 1
-  const relevantPositions = getRelevantPositions(board, 2)
+  const relevantPositions = getRelevantPositions(board, AI_MEDIUM_HARD_SEARCH_RANGE)
 
   if (relevantPositions.length === 0) return null
 
@@ -106,26 +124,26 @@ function getHardMove(board: Board, player: Player): Position | null {
     // - Prioritize blocking opponent wins
     // - Consider creating multiple threats
     // - Consider opponent's potential threats
-    let totalScore = myScore * 1.5 + opponentScore * 1.3
+    let totalScore = myScore * HARD_AI_OWN_PATTERN_MULTIPLIER + opponentScore * HARD_AI_OPPONENT_PATTERN_MULTIPLIER
 
-    if (isWinningMove) totalScore += 10000000
-    if (blocksWinningMove) totalScore += 5000000
+    if (isWinningMove) totalScore += BONUS_WINNING_MOVE
+    if (blocksWinningMove) totalScore += BONUS_BLOCK_WIN
 
     // Bonus for creating multiple threats
     const openFours = myPatterns.filter(p => p.type === 'open-four').length
     const fours = myPatterns.filter(p => p.type === 'four').length
     const openThrees = myPatterns.filter(p => p.type === 'open-three').length
 
-    totalScore += openFours * 50000
-    totalScore += fours * 10000
-    totalScore += openThrees * 5000
+    totalScore += openFours * BONUS_OPEN_FOUR_MULTIPLIER
+    totalScore += fours * BONUS_FOUR_MULTIPLIER
+    totalScore += openThrees * BONUS_OPEN_THREE_MULTIPLIER
 
     // Penalty for allowing opponent to create threats
     const opponentOpenFours = opponentPatterns.filter(p => p.type === 'open-four').length
     const opponentFours = opponentPatterns.filter(p => p.type === 'four').length
 
-    totalScore += opponentOpenFours * 100000
-    totalScore += opponentFours * 20000
+    totalScore += opponentOpenFours * BONUS_BLOCK_OPEN_FOUR
+    totalScore += opponentFours * BONUS_BLOCK_FOUR
 
     evaluations.push({
       position: pos,
@@ -140,13 +158,12 @@ function getHardMove(board: Board, player: Player): Position | null {
   evaluations.sort((a, b) => b.totalScore - a.totalScore)
 
   // Add some randomness to top moves to make it less predictable
-  const topMoves = evaluations.slice(0, 3)
-  const weights = [0.7, 0.2, 0.1]
+  const topMoves = evaluations.slice(0, AI_HARD_TOP_MOVES_COUNT)
   const random = Math.random()
   let cumulative = 0
 
   for (let i = 0; i < topMoves.length; i++) {
-    cumulative += weights[i]
+    cumulative += AI_HARD_MOVE_WEIGHTS[i]
     if (random <= cumulative) {
       return topMoves[i].position
     }
@@ -183,7 +200,7 @@ export function evaluateMove(
   const winCheck = checkWin(testBoard, position, player)
 
   if (winCheck.isWin) {
-    return 1000000
+    return SCORE_FIVE
   }
 
   const myPatterns = evaluatePosition(board, position, player)
@@ -193,5 +210,5 @@ export function evaluateMove(
   const myScore = myPatterns.reduce((sum, p) => sum + p.score, 0)
   const opponentScore = opponentPatterns.reduce((sum, p) => sum + p.score, 0)
 
-  return myScore - opponentScore * 0.9
+  return myScore - opponentScore * MOVE_EVAL_OPPONENT_MULTIPLIER
 }

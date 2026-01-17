@@ -23,8 +23,8 @@ function loadStats(): BentleyStats {
     if (stored) {
       return JSON.parse(stored)
     }
-  } catch (error) {
-    console.error('Failed to load Bentley stats:', error)
+  } catch {
+    // Failed to load Bentley stats - use defaults
   }
 
   return {
@@ -41,8 +41,8 @@ function loadStats(): BentleyStats {
 function saveStats(stats: BentleyStats): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stats))
-  } catch (error) {
-    console.error('Failed to save Bentley stats:', error)
+  } catch {
+    // Failed to save Bentley stats to localStorage
   }
 }
 

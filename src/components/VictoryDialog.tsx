@@ -3,6 +3,7 @@
  * Shows game result with Gomoku-themed personality messages
  */
 
+import type React from 'react'
 import { useState, useEffect } from 'react'
 import {
   Dialog,
@@ -13,7 +14,7 @@ import {
   DialogTitle,
 } from './ui/dialog'
 import { Button } from './ui/button'
-import type { Player } from '@/types/checkers.types'
+import type { Player } from '@/types/gomoku.types'
 import type { Character } from '../../../shared/characters'
 
 interface VictoryDialogProps {
@@ -88,7 +89,7 @@ export function VictoryDialog({
                 src={character.loseImage}
                 alt={`${character.name} loses`}
                 className="max-h-40 w-auto object-contain"
-                onError={(e) => {
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                   // Fallback to avatar if specific image not found
                   e.currentTarget.src = character.avatar
                 }}
@@ -98,7 +99,7 @@ export function VictoryDialog({
                 src={character.winImage}
                 alt={`${character.name} wins`}
                 className="max-h-40 w-auto object-contain"
-                onError={(e) => {
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                   // Fallback to avatar if specific image not found
                   e.currentTarget.src = character.avatar
                 }}
@@ -108,7 +109,7 @@ export function VictoryDialog({
                 src={character.playAgainImage}
                 alt={`${character.name}`}
                 className="max-h-40 w-auto object-contain"
-                onError={(e) => {
+                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
                   // Fallback to avatar if specific image not found
                   e.currentTarget.src = character.avatar
                 }}
@@ -172,10 +173,10 @@ export function VictoryDialog({
         </div>
 
         <DialogFooter className="flex-col gap-2 sm:flex-row">
-          <Button onClick={onPlayAgain} className="w-full sm:w-auto">
+          <Button onClick={onPlayAgain} className="w-full sm:w-auto" aria-label="Start a new game">
             Play Again
           </Button>
-          <Button onClick={onClose} variant="outline" className="w-full sm:w-auto">
+          <Button onClick={onClose} variant="outline" className="w-full sm:w-auto" aria-label="Close victory dialog">
             Close
           </Button>
         </DialogFooter>

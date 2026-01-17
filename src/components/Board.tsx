@@ -46,6 +46,8 @@ export function Board({
           <div
             className="grid gap-0 border-4 border-amber-950 rounded-lg overflow-hidden shadow-2xl bg-amber-100"
             style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, minmax(0, 1fr))` }}
+            role="grid"
+            aria-label="Gomoku game board, 15 by 15 grid"
           >
             {board.map((row, rowIndex) =>
               row.map((cell, colIndex) => (

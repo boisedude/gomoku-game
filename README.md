@@ -190,8 +190,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Created by M. Cooper for [www.mcooper.com](https://www.mcooper.com)
 
-Built with assistance from [Claude](https://claude.ai)
-
 ---
 
 **Challenge the dogs! Can you beat Bentley?**

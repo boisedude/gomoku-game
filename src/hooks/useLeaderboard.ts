@@ -4,7 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import type { LeaderboardEntry } from '@/types/checkers.types'
+import type { LeaderboardEntry } from '@/types/gomoku.types'
 
 const STORAGE_KEY = 'othello-leaderboard'
 const DEFAULT_PLAYER_NAME = 'Player'
@@ -55,14 +55,12 @@ function getInitialLeaderboard(): LeaderboardEntry {
       if (isValidLeaderboard(data)) {
         return data
       } else {
-        console.warn('Invalid leaderboard data in localStorage, resetting to defaults')
-        // Clear corrupted data
+        // Invalid leaderboard data in localStorage - reset to defaults
         localStorage.removeItem(STORAGE_KEY)
       }
     }
-  } catch (error) {
-    console.error('Failed to load leaderboard:', error)
-    // Clear corrupted data
+  } catch {
+    // Failed to load leaderboard - clear corrupted data and use defaults
     try {
       localStorage.removeItem(STORAGE_KEY)
     } catch {
@@ -91,8 +89,9 @@ export function useLeaderboard() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stats))
-    } catch (error) {
-      console.error('Failed to save leaderboard:', error)
+    } catch {
+      // Failed to save leaderboard to localStorage - data will be lost on refresh
+      // This can happen if localStorage is full or disabled
     }
   }, [stats])
 

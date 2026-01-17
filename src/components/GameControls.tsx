@@ -5,7 +5,7 @@
 
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import type { Difficulty, GameMode } from '@/types/checkers.types'
+import type { Difficulty, GameMode } from '@/types/gomoku.types'
 import type { Character } from '../../../shared/characters'
 
 interface GameControlsProps {
@@ -60,16 +60,16 @@ export function GameControls({
           </div>
         )}
 
-        <Button onClick={onNewGame} disabled={disabled} variant="default">
+        <Button onClick={onNewGame} disabled={disabled} variant="default" aria-label="Start a new game">
           New Game
         </Button>
 
-        <Button onClick={onShowLeaderboard} disabled={disabled} variant="outline">
+        <Button onClick={onShowLeaderboard} disabled={disabled} variant="outline" aria-label="View game statistics">
           📊 Stats
         </Button>
 
         {onShowHelp && (
-          <Button onClick={onShowHelp} disabled={disabled} variant="outline">
+          <Button onClick={onShowHelp} disabled={disabled} variant="outline" aria-label="Learn how to play">
             ❓ How to Play
           </Button>
         )}

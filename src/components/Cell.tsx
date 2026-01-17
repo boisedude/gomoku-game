@@ -3,7 +3,9 @@
  * Represents a single intersection on the Gomoku board
  */
 
+import type React from 'react'
 import type { Player } from '@/types/gomoku.types'
+import { BOARD_LAST_INDEX } from '@/constants/gameConstants'
 
 interface CellProps {
   row: number
@@ -42,13 +44,30 @@ export function Cell({
   const borderClasses = 'border-gray-400'
   const topBorder = row === 0 ? 'border-t-2' : 'border-t'
   const leftBorder = col === 0 ? 'border-l-2' : 'border-l'
-  const rightBorder = col === 14 ? 'border-r-2' : ''
-  const bottomBorder = row === 14 ? 'border-b-2' : ''
+  const rightBorder = col === BOARD_LAST_INDEX ? 'border-r-2' : ''
+  const bottomBorder = row === BOARD_LAST_INDEX ? 'border-b-2' : ''
+
+  // Generate accessible label for the cell
+  const colLetter = String.fromCharCode(65 + col) // A-O
+  const rowNumber = row + 1 // 1-15
+  const cellNotation = `${colLetter}${rowNumber}`
+  const cellState = player === null ? 'empty' : player === 1 ? 'black stone' : 'white stone'
+  const ariaLabel = `Cell ${cellNotation}, ${cellState}${isLastPlaced ? ', last move' : ''}${isWinning ? ', winning position' : ''}`
 
   return (
     <div
       className={`${baseClasses} ${cursorClasses} ${borderClasses} ${topBorder} ${leftBorder} ${rightBorder} ${bottomBorder}`}
       onClick={handleClick}
+      onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          handleClick()
+        }
+      }}
+      role="button"
+      tabIndex={player === null ? 0 : -1}
+      aria-label={ariaLabel}
+      aria-pressed={player !== null}
       data-row={row}
       data-col={col}
     >
