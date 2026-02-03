@@ -15,7 +15,7 @@ import {
 } from './ui/dialog'
 import { Button } from './ui/button'
 import type { Player } from '@/types/gomoku.types'
-import type { Character } from '../../../shared/characters'
+import type { Character } from '@shared/characters'
 
 interface VictoryDialogProps {
   open: boolean
@@ -42,9 +42,10 @@ export function VictoryDialog({
 
   // Select random message when dialog opens (in effect to comply with React 19 purity rules)
   // Math.random() must be called in effect, not during render, to maintain purity
-  // setState in effect is intentional here - we're responding to dialog opening
+  // Using queueMicrotask to defer setState and avoid cascading renders
   useEffect(() => {
     if (open) {
+      let message: string
       if (isDraw) {
         const drawMessages = [
           `It's a perfect tie! Both you and ${character.name} are equally matched!`,
@@ -53,19 +54,19 @@ export function VictoryDialog({
           `Tied at the buzzer! ${character.name} wants a rematch to settle this!`,
           'A perfect stalemate! Five in a row is harder than it looks!',
         ]
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setVictoryMessage(drawMessages[Math.floor(Math.random() * drawMessages.length)])
+        message = drawMessages[Math.floor(Math.random() * drawMessages.length)]
       } else if (winner === 1) {
         // Player won - use character's playerWins catchphrases
         const messages = character.catchphrases.playerWins
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setVictoryMessage(messages[Math.floor(Math.random() * messages.length)])
+        message = messages[Math.floor(Math.random() * messages.length)]
       } else {
         // Character won - use character's characterWins catchphrases
         const messages = character.catchphrases.characterWins
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setVictoryMessage(messages[Math.floor(Math.random() * messages.length)])
+        message = messages[Math.floor(Math.random() * messages.length)]
       }
+      queueMicrotask(() => {
+        setVictoryMessage(message)
+      })
     }
   }, [open, isDraw, winner, character])
 

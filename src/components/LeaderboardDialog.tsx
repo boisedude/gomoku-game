@@ -22,6 +22,7 @@ interface LeaderboardDialogProps {
   stats: LeaderboardEntry
   onResetStats: () => void
   onUpdatePlayerName: (name: string) => void
+  characterName?: string
 }
 
 export function LeaderboardDialog({
@@ -30,6 +31,7 @@ export function LeaderboardDialog({
   stats,
   onResetStats,
   onUpdatePlayerName,
+  characterName = 'AI',
 }: LeaderboardDialogProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [playerName, setPlayerName] = useState(stats.playerName)
@@ -52,7 +54,7 @@ export function LeaderboardDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
-            <span>📊 Your Record vs Coop</span>
+            <span>Your Record vs {characterName}</span>
           </DialogTitle>
           <DialogDescription>
             {isEditing ? (
@@ -84,8 +86,8 @@ export function LeaderboardDialog({
           <div className="space-y-2">
             <h3 className="mb-2 text-sm font-semibold">Game Record</h3>
             <StatRow label="Total Games" value={stats.totalGames} />
-            <StatRow label="Wins vs Coop" value={stats.wins} highlight="green" />
-            <StatRow label="Losses to Coop" value={stats.losses} highlight="red" />
+            <StatRow label={`Wins vs ${characterName}`} value={stats.wins} highlight="green" />
+            <StatRow label={`Losses to ${characterName}`} value={stats.losses} highlight="red" />
             <StatRow label="Draws" value={stats.draws} />
             <StatRow label="Win Rate" value={`${winRate}%`} />
           </div>
@@ -103,16 +105,16 @@ export function LeaderboardDialog({
             </div>
           </div>
 
-          {/* Othello-Specific Stats */}
+          {/* Gomoku-Specific Stats */}
           <div className="border-t pt-4">
             <h3 className="mb-2 text-sm font-semibold">Best Records</h3>
             <div className="space-y-2">
               <StatRow
-                label="Largest Margin"
-                value={stats.totalCaptures > 0 ? `${stats.totalCaptures} discs` : 'N/A'}
+                label="Largest Win Margin"
+                value={stats.largestWinMargin > 0 ? `${stats.largestWinMargin} stones` : 'N/A'}
               />
               <StatRow label="Perfect Games" value={stats.perfectGames} />
-              <StatRow label="Total Discs Flipped" value={stats.kingsCreated.toLocaleString()} />
+              <StatRow label="Total Stones Placed" value={stats.totalStonesPlaced.toLocaleString()} />
             </div>
           </div>
         </div>

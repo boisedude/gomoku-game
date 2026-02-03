@@ -25,8 +25,6 @@ import {
   MEDIUM_AI_OPPONENT_PATTERN_MULTIPLIER,
   HARD_AI_OWN_PATTERN_MULTIPLIER,
   HARD_AI_OPPONENT_PATTERN_MULTIPLIER,
-  SCORE_FIVE,
-  MOVE_EVAL_OPPONENT_MULTIPLIER,
 } from '@/constants/gameConstants'
 
 /**
@@ -186,29 +184,4 @@ export function getAIMove(board: Board, player: Player, difficulty: Difficulty):
     default:
       return getMediumMove(board, player)
   }
-}
-
-/**
- * Simulates a move and evaluates the resulting position
- */
-export function evaluateMove(
-  board: Board,
-  position: Position,
-  player: Player
-): number {
-  const testBoard = placeStone(board, position, player)
-  const winCheck = checkWin(testBoard, position, player)
-
-  if (winCheck.isWin) {
-    return SCORE_FIVE
-  }
-
-  const myPatterns = evaluatePosition(board, position, player)
-  const opponent = player === 1 ? 2 : 1
-  const opponentPatterns = evaluatePosition(board, position, opponent)
-
-  const myScore = myPatterns.reduce((sum, p) => sum + p.score, 0)
-  const opponentScore = opponentPatterns.reduce((sum, p) => sum + p.score, 0)
-
-  return myScore - opponentScore * MOVE_EVAL_OPPONENT_MULTIPLIER
 }

@@ -8,10 +8,12 @@ import { Board } from '@/components/Board'
 import { GameControls } from '@/components/GameControls'
 import { VictoryDialog } from '@/components/VictoryDialog'
 import { LeaderboardDialog } from '@/components/LeaderboardDialog'
+import { Tutorial } from '@/components/Tutorial'
 import { useGomokuGame } from '@/hooks/useGomokuGame'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { useGameAudio } from '@/hooks/useGameAudio'
 import { useCharacterSelection } from '@/hooks/useCharacterSelection'
+import { STORAGE_KEY_TUTORIAL_COMPLETED, TUTORIAL_SHOW_DELAY_MS } from '@/constants/gameConstants'
 
 export function GomokuGame() {
   const {
@@ -20,6 +22,8 @@ export function GomokuGame() {
     handleSquareClick,
     startNewGame,
     changeDifficulty,
+    undoMove,
+    canUndo,
     isLastPlaced,
     isWinningPosition,
   } = useGomokuGame()
@@ -30,9 +34,35 @@ export function GomokuGame() {
 
   const [showVictoryDialog, setShowVictoryDialog] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [showTutorial, setShowTutorial] = useState(false)
+  const [hasCompletedTutorial, setHasCompletedTutorial] = useState(() => {
+    return localStorage.getItem(STORAGE_KEY_TUTORIAL_COMPLETED) === 'true'
+  })
   const prevStatusRef = useRef(gameState.status)
 
-  // Detect game end - using ref to avoid setState in useEffect
+  // Show tutorial on first visit
+  useEffect(() => {
+    if (!hasCompletedTutorial) {
+      const timer = setTimeout(() => {
+        setShowTutorial(true)
+      }, TUTORIAL_SHOW_DELAY_MS)
+      return () => clearTimeout(timer)
+    }
+  }, [hasCompletedTutorial])
+
+  // Handle tutorial completion
+  const handleTutorialComplete = useCallback(() => {
+    setHasCompletedTutorial(true)
+    try {
+      localStorage.setItem(STORAGE_KEY_TUTORIAL_COMPLETED, 'true')
+    } catch {
+      // localStorage may be unavailable or full - tutorial will show again on next visit
+    }
+  }, [])
+
+  // Detect game end - using ref to track status changes
+  // Sound effects and stats recording are side effects that sync with external systems
+  // Dialog display is deferred using queueMicrotask to avoid cascading renders
   useEffect(() => {
     const prevStatus = prevStatusRef.current
 
@@ -54,7 +84,10 @@ export function GomokuGame() {
         recordDraw(totalMoves)
       }
 
-      setShowVictoryDialog(true)
+      // Defer dialog display to avoid synchronous setState in effect
+      queueMicrotask(() => {
+        setShowVictoryDialog(true)
+      })
     }
 
     prevStatusRef.current = gameState.status
@@ -90,8 +123,41 @@ export function GomokuGame() {
     [changeDifficulty, changeCharacter]
   )
 
+  // Keyboard shortcut for undo (U key)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Don't trigger if user is typing in an input field
+      if (
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement
+      ) {
+        return
+      }
+
+      if (event.key === 'u' || event.key === 'U') {
+        if (canUndo) {
+          undoMove()
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [canUndo, undoMove])
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-amber-50 to-amber-100 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-start bg-gradient-to-br from-amber-50 to-amber-100 p-2 sm:p-4 sm:justify-center">
+      {/* Return to Arcade Button */}
+      <div className="w-full max-w-md mb-3 sm:mb-4">
+        <a href="https://www.mcooper.com/arcade/" className="block">
+          <button
+            className="w-full sm:w-auto h-10 sm:h-11 px-4 text-sm sm:text-base font-semibold border-2 border-amber-300 rounded-lg bg-white hover:bg-amber-50 hover:border-amber-500 transition-colors"
+          >
+            ← Return to Arcade
+          </button>
+        </a>
+      </div>
+
       {/* Header */}
       <div className="mb-6 text-center">
         <h1 className="mb-2 text-4xl font-bold text-amber-900">Gomoku</h1>
@@ -142,13 +208,32 @@ export function GomokuGame() {
         <p className="text-sm text-gray-600">Get 5 in a row to win!</p>
       </div>
 
+      {/* Aria-live region for screen reader announcements */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="sr-only"
+      >
+        {gameState.status === 'playing'
+          ? gameState.currentPlayer === 1
+            ? 'Your turn. You are playing black stones.'
+            : `${character.name}'s turn. They are playing white stones.`
+          : gameState.status === 'won'
+            ? gameState.winner === 1
+              ? 'Congratulations! You won the game!'
+              : `${character.name} won the game.`
+            : 'The game ended in a draw.'}
+      </div>
+
       {/* Board */}
       <Board
         board={gameState.board}
         onSquareClick={handleSquareClick}
         isLastPlaced={isLastPlaced}
         isWinningPosition={isWinningPosition}
+        winningLine={gameState.winningLine}
         disabled={isAnimating || gameState.status !== 'playing'}
+        currentPlayer={gameState.currentPlayer}
       />
 
       {/* Game Controls */}
@@ -158,11 +243,10 @@ export function GomokuGame() {
           onDifficultyChange={handleDifficultyChange}
           onNewGame={handleNewGame}
           onShowLeaderboard={() => setShowLeaderboard(true)}
+          onShowHelp={() => setShowTutorial(true)}
+          onUndo={undoMove}
+          canUndo={canUndo}
           gameMode={gameState.mode}
-          currentPlayer={gameState.currentPlayer}
-          blackCount={gameState.blackCount}
-          whiteCount={gameState.whiteCount}
-          character={character}
         />
       </div>
 
@@ -187,8 +271,16 @@ export function GomokuGame() {
           onClose={() => setShowLeaderboard(false)}
           onUpdatePlayerName={updatePlayerName}
           onResetStats={resetStats}
+          characterName={character.name}
         />
       )}
+
+      {/* Tutorial Dialog */}
+      <Tutorial
+        open={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        onComplete={handleTutorialComplete}
+      />
     </div>
   )
 }

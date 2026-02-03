@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import type { GameState, Difficulty, Position, Move } from '@/types/gomoku.types'
+import type { GameState, Difficulty, Position, Move, UndoState } from '@/types/gomoku.types'
 import {
   createInitialGameState,
   placeStone,
@@ -21,6 +21,7 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
   )
   const [lastPlacedPosition, setLastPlacedPosition] = useState<Position | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
+  const [isAIThinking, setIsAIThinking] = useState(false)
 
   const aiMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -48,6 +49,7 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
       !aiMoveScheduledRef.current
     ) {
       aiMoveScheduledRef.current = true
+      setIsAIThinking(true)
 
       aiMoveTimeoutRef.current = setTimeout(() => {
         try {
@@ -81,6 +83,8 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
                     moveHistory: [...prevState.moveHistory, move],
                     lastMove: move,
                     ...counts,
+                    // Clear undo state on game over, keep it otherwise for player to undo
+                    undoState: gameOver.isOver ? null : prevState.undoState,
                   }
                 } catch {
                   // AI move execution failed - return previous state to maintain game integrity
@@ -88,12 +92,16 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
                 }
               })
               setIsAnimating(false)
+              setIsAIThinking(false)
               animationTimeoutRef.current = null
             }, MOVE_ANIMATION_DELAY_MS)
+          } else {
+            setIsAIThinking(false)
           }
         } catch {
           // AI move calculation failed - reset animation state
           setIsAnimating(false)
+          setIsAIThinking(false)
         } finally {
           aiMoveScheduledRef.current = false
         }
@@ -104,6 +112,7 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
       if (aiMoveTimeoutRef.current) {
         clearTimeout(aiMoveTimeoutRef.current)
         aiMoveTimeoutRef.current = null
+        setIsAIThinking(false)
       }
     }
   }, [
@@ -154,6 +163,18 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
             const gameOver = checkGameOver(newBoard, move)
             const nextPlayer = prevState.currentPlayer === 1 ? 2 : 1
 
+            // Save undo state before player move (only in pvc mode)
+            const newUndoState: UndoState | null =
+              prevState.mode === 'pvc' && !gameOver.isOver
+                ? {
+                    board: prevState.board,
+                    currentPlayer: prevState.currentPlayer,
+                    lastMove: prevState.lastMove,
+                    blackCount: prevState.blackCount,
+                    whiteCount: prevState.whiteCount,
+                  }
+                : null
+
             return {
               ...prevState,
               board: newBoard,
@@ -164,6 +185,7 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
               moveHistory: [...prevState.moveHistory, move],
               lastMove: move,
               ...counts,
+              undoState: newUndoState,
             }
           } catch {
             // Move execution failed - return previous state to maintain game integrity
@@ -181,10 +203,61 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
    * Starts a new game
    */
   const startNewGame = useCallback(() => {
+    // Clear any pending AI moves
+    if (aiMoveTimeoutRef.current) {
+      clearTimeout(aiMoveTimeoutRef.current)
+      aiMoveTimeoutRef.current = null
+    }
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current)
+      animationTimeoutRef.current = null
+    }
+    aiMoveScheduledRef.current = false
     setGameState(createInitialGameState('pvc', gameState.difficulty))
     setLastPlacedPosition(null)
     setIsAnimating(false)
+    setIsAIThinking(false)
   }, [gameState.difficulty])
+
+  /**
+   * Undo the last move(s)
+   * In VS AI mode: Undoes both the AI's response and the player's move
+   * In PvP mode: Undoes single move (not yet implemented for PvP)
+   */
+  const undoMove = useCallback(() => {
+    // Can't undo during animation or AI thinking
+    if (isAnimating || isAIThinking) return
+
+    setGameState(prevState => {
+      // Can't undo if no undo state available
+      if (!prevState.undoState) return prevState
+      // Can only undo during active play
+      if (prevState.status !== 'playing') return prevState
+      // In pvc mode, can only undo when it's player's turn (after AI moved)
+      if (prevState.mode === 'pvc' && prevState.currentPlayer !== 1) return prevState
+
+      const { undoState } = prevState
+
+      // Calculate how many moves to remove from history
+      // In pvc mode, we undo 2 moves (player + AI)
+      const movesToRemove = prevState.mode === 'pvc' ? 2 : 1
+      const newMoveHistory = prevState.moveHistory.slice(0, -movesToRemove)
+
+      return {
+        ...prevState,
+        board: undoState.board,
+        currentPlayer: undoState.currentPlayer,
+        lastMove: undoState.lastMove,
+        blackCount: undoState.blackCount,
+        whiteCount: undoState.whiteCount,
+        moveHistory: newMoveHistory,
+        undoState: null, // Clear undo state after using it
+      }
+    })
+
+    // Update lastPlacedPosition based on new state
+    setLastPlacedPosition(null)
+  }, [isAnimating, isAIThinking])
 
   /**
    * Changes difficulty level
@@ -222,12 +295,25 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
     [gameState.winningLine]
   )
 
+  /**
+   * Check if undo is available
+   */
+  const canUndo =
+    gameState.undoState !== null &&
+    gameState.status === 'playing' &&
+    !isAnimating &&
+    !isAIThinking &&
+    (gameState.mode === 'pvc' ? gameState.currentPlayer === 1 : true)
+
   return {
     gameState,
     isAnimating,
+    isAIThinking,
     handleSquareClick,
     startNewGame,
     changeDifficulty,
+    undoMove,
+    canUndo,
     isLastPlaced,
     isWinningPosition,
   }

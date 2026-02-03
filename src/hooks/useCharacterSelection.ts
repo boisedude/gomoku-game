@@ -4,8 +4,8 @@
  */
 
 import { useState, useCallback } from 'react'
-import { getCharacterById } from '../../../shared/characters'
-import type { Character, CharacterId } from '../../../shared/characters'
+import { getCharacterById } from '@shared/characters'
+import type { Character, CharacterId } from '@shared/characters'
 import type { Difficulty } from '@/types/gomoku.types'
 
 // Map Gomoku difficulty to character IDs

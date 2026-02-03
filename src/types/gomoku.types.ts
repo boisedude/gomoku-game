@@ -35,6 +35,15 @@ export interface Move {
   player: Player
 }
 
+// Undo state for reverting moves
+export interface UndoState {
+  board: Board
+  currentPlayer: Player
+  lastMove?: Move
+  blackCount: number
+  whiteCount: number
+}
+
 // Complete game state
 export interface GameState {
   board: Board
@@ -48,6 +57,7 @@ export interface GameState {
   blackCount: number // Player's stone count
   whiteCount: number // AI's stone count
   winningLine?: Position[] // Positions that form the winning line
+  undoState: UndoState | null // State for undo functionality
 }
 
 // Leaderboard entry
@@ -58,16 +68,11 @@ export interface LeaderboardEntry {
   draws: number
   winStreak: number
   longestWinStreak: number
-  totalCaptures: number // Best winning margin (stones difference)
-  kingsCreated: number // Total stones placed across all games
+  largestWinMargin: number // Best winning margin (stones difference)
+  totalStonesPlaced: number // Total stones placed across all games
   perfectGames: number // Games won with no opponent threats
   totalGames: number
-  multiJumps: number // Total moves made across all games
-}
-
-// Saved game state
-export interface SavedGame extends GameState {
-  savedAt: number
+  totalMoves: number // Total moves made across all games
 }
 
 // Direction vectors for checking lines (8 directions)

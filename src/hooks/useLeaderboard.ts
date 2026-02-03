@@ -5,8 +5,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import type { LeaderboardEntry } from '@/types/gomoku.types'
+import { STORAGE_KEY_LEADERBOARD } from '@/constants/gameConstants'
 
-const STORAGE_KEY = 'gomoku-leaderboard'
 const DEFAULT_PLAYER_NAME = 'Player'
 
 /**
@@ -32,22 +32,22 @@ function isValidLeaderboard(data: unknown): data is LeaderboardEntry {
     entry.winStreak >= 0 &&
     typeof entry.longestWinStreak === 'number' &&
     entry.longestWinStreak >= 0 &&
-    typeof entry.totalCaptures === 'number' &&
-    entry.totalCaptures >= 0 &&
-    typeof entry.kingsCreated === 'number' &&
-    entry.kingsCreated >= 0 &&
+    typeof entry.largestWinMargin === 'number' &&
+    entry.largestWinMargin >= 0 &&
+    typeof entry.totalStonesPlaced === 'number' &&
+    entry.totalStonesPlaced >= 0 &&
     typeof entry.perfectGames === 'number' &&
     entry.perfectGames >= 0 &&
     typeof entry.totalGames === 'number' &&
     entry.totalGames >= 0 &&
-    typeof entry.multiJumps === 'number' &&
-    entry.multiJumps >= 0
+    typeof entry.totalMoves === 'number' &&
+    entry.totalMoves >= 0
   )
 }
 
 function getInitialLeaderboard(): LeaderboardEntry {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEY_LEADERBOARD)
     if (stored) {
       const data = JSON.parse(stored)
 
@@ -56,13 +56,13 @@ function getInitialLeaderboard(): LeaderboardEntry {
         return data
       } else {
         // Invalid leaderboard data in localStorage - reset to defaults
-        localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(STORAGE_KEY_LEADERBOARD)
       }
     }
   } catch {
     // Failed to load leaderboard - clear corrupted data and use defaults
     try {
-      localStorage.removeItem(STORAGE_KEY)
+      localStorage.removeItem(STORAGE_KEY_LEADERBOARD)
     } catch {
       // Ignore errors when trying to clear
     }
@@ -75,11 +75,11 @@ function getInitialLeaderboard(): LeaderboardEntry {
     draws: 0,
     winStreak: 0,
     longestWinStreak: 0,
-    totalCaptures: 0,
-    kingsCreated: 0,
+    largestWinMargin: 0,
+    totalStonesPlaced: 0,
     perfectGames: 0,
     totalGames: 0,
-    multiJumps: 0,
+    totalMoves: 0,
   }
 }
 
@@ -88,18 +88,18 @@ export function useLeaderboard() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stats))
+      localStorage.setItem(STORAGE_KEY_LEADERBOARD, JSON.stringify(stats))
     } catch {
       // Failed to save leaderboard to localStorage - data will be lost on refresh
       // This can happen if localStorage is full or disabled
     }
   }, [stats])
 
-  const recordWin = useCallback((margin: number, discsFlipped: number, isPerfect: boolean) => {
+  const recordWin = useCallback((margin: number, stonesPlaced: number, isPerfect: boolean) => {
     setStats(prev => {
       const newWinStreak = prev.winStreak + 1
       const newLongestStreak = Math.max(newWinStreak, prev.longestWinStreak)
-      const newLargestMargin = Math.max(prev.totalCaptures, margin)
+      const newLargestMargin = Math.max(prev.largestWinMargin, margin)
       const newPerfectGames = isPerfect ? prev.perfectGames + 1 : prev.perfectGames
 
       return {
@@ -107,31 +107,31 @@ export function useLeaderboard() {
         wins: prev.wins + 1,
         winStreak: newWinStreak,
         longestWinStreak: newLongestStreak,
-        totalCaptures: newLargestMargin,
+        largestWinMargin: newLargestMargin,
         perfectGames: newPerfectGames,
         totalGames: prev.totalGames + 1,
-        multiJumps: prev.multiJumps + discsFlipped,
+        totalMoves: prev.totalMoves + stonesPlaced,
       }
     })
   }, [])
 
-  const recordLoss = useCallback((discsFlipped: number) => {
+  const recordLoss = useCallback((stonesPlaced: number) => {
     setStats(prev => ({
       ...prev,
       losses: prev.losses + 1,
       winStreak: 0,
       totalGames: prev.totalGames + 1,
-      multiJumps: prev.multiJumps + discsFlipped,
+      totalMoves: prev.totalMoves + stonesPlaced,
     }))
   }, [])
 
-  const recordDraw = useCallback((discsFlipped: number) => {
+  const recordDraw = useCallback((stonesPlaced: number) => {
     setStats(prev => ({
       ...prev,
       draws: prev.draws + 1,
       winStreak: 0,
       totalGames: prev.totalGames + 1,
-      multiJumps: prev.multiJumps + discsFlipped,
+      totalMoves: prev.totalMoves + stonesPlaced,
     }))
   }, [])
 
@@ -150,11 +150,11 @@ export function useLeaderboard() {
       draws: 0,
       winStreak: 0,
       longestWinStreak: 0,
-      totalCaptures: 0,
-      kingsCreated: 0,
+      largestWinMargin: 0,
+      totalStonesPlaced: 0,
       perfectGames: 0,
       totalGames: 0,
-      multiJumps: 0,
+      totalMoves: 0,
     })
   }, [stats.playerName])
 

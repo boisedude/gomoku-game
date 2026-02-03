@@ -1,12 +1,11 @@
 /**
  * Game Controls Component
- * Controls for difficulty selection, new game, leaderboard, etc.
+ * Controls for difficulty selection, new game, leaderboard, undo, etc.
  */
 
 import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import type { Difficulty, GameMode } from '@/types/gomoku.types'
-import type { Character } from '../../../shared/characters'
 
 interface GameControlsProps {
   difficulty: Difficulty
@@ -14,12 +13,10 @@ interface GameControlsProps {
   onNewGame: () => void
   onShowLeaderboard: () => void
   onShowHelp?: () => void
+  onUndo?: () => void
+  canUndo?: boolean
   disabled?: boolean
   gameMode: GameMode
-  currentPlayer: 1 | 2
-  blackCount: number
-  whiteCount: number
-  character: Character
 }
 
 export function GameControls({
@@ -28,12 +25,10 @@ export function GameControls({
   onNewGame,
   onShowLeaderboard,
   onShowHelp,
+  onUndo,
+  canUndo = false,
   disabled = false,
   gameMode,
-  currentPlayer,
-  blackCount,
-  whiteCount,
-  character,
 }: GameControlsProps) {
   return (
     <div className="flex flex-col gap-6">
@@ -64,6 +59,18 @@ export function GameControls({
           New Game
         </Button>
 
+        {onUndo && (
+          <Button
+            onClick={onUndo}
+            disabled={disabled || !canUndo}
+            variant="outline"
+            aria-label="Undo last move (U)"
+            title="Undo (U)"
+          >
+            Undo
+          </Button>
+        )}
+
         <Button onClick={onShowLeaderboard} disabled={disabled} variant="outline" aria-label="View game statistics">
           📊 Stats
         </Button>
@@ -75,38 +82,6 @@ export function GameControls({
         )}
       </div>
 
-      {/* Bottom Row: Turn Indicator and Disc Counts */}
-      <div className="flex flex-wrap items-center justify-center gap-6">
-        {/* Turn Indicator */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">
-            {currentPlayer === 1 ? 'Your Turn' : `${character.name}'s Turn`}
-          </span>
-          <div
-            className={`h-6 w-6 rounded-full shadow-md transition-all ${
-              currentPlayer === 1
-                ? 'bg-gradient-to-br from-gray-800 to-black ring-2 ring-gray-600'
-                : 'bg-gradient-to-br from-white to-gray-100 ring-2 ring-gray-300'
-            }`}
-          />
-        </div>
-
-        {/* Disc Counts */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-5 rounded-full bg-gradient-to-br from-gray-800 to-black shadow-md" />
-            <span className="text-sm font-medium">
-              You: <span className="font-bold">{blackCount}</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-5 rounded-full bg-gradient-to-br from-white to-gray-100 shadow-md ring-1 ring-gray-300" />
-            <span className="text-sm font-medium">
-              {character.name}: <span className="font-bold">{whiteCount}</span>
-            </span>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }

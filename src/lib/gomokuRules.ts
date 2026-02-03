@@ -24,6 +24,17 @@ import {
 } from '@/constants/gameConstants'
 
 /**
+ * Four main directions for checking patterns (horizontal, vertical, diagonals)
+ * Each direction only needs to be checked once since we count both forward and backward
+ */
+const FOUR_DIRECTIONS: Direction[] = [
+  [0, 1],   // Horizontal
+  [1, 0],   // Vertical
+  [1, 1],   // Diagonal \
+  [1, -1],  // Diagonal /
+]
+
+/**
  * Creates an empty 15x15 board
  */
 export function createEmptyBoard(): Board {
@@ -44,21 +55,6 @@ export function isValidPosition(row: number, col: number): boolean {
  */
 export function isEmpty(board: Board, position: Position): boolean {
   return board[position.row][position.col] === null
-}
-
-/**
- * Gets all empty positions on the board
- */
-export function getEmptyPositions(board: Board): Position[] {
-  const positions: Position[] = []
-  for (let row = 0; row < BOARD_SIZE; row++) {
-    for (let col = 0; col < BOARD_SIZE; col++) {
-      if (board[row][col] === null) {
-        positions.push({ row, col })
-      }
-    }
-  }
-  return positions
 }
 
 /**
@@ -113,15 +109,7 @@ export function checkWin(board: Board, position: Position, player: Player): {
   isWin: boolean
   winningLine?: Position[]
 } {
-  // Check all 4 directions (horizontal, vertical, and 2 diagonals)
-  const directionsToCheck: Direction[] = [
-    [0, 1],   // Horizontal
-    [1, 0],   // Vertical
-    [1, 1],   // Diagonal \
-    [1, -1],  // Diagonal /
-  ]
-
-  for (const direction of directionsToCheck) {
+  for (const direction of FOUR_DIRECTIONS) {
     const { count, positions } = countConsecutive(
       board,
       position,
@@ -228,15 +216,7 @@ export function evaluatePosition(
   const patterns: Pattern[] = []
   const testBoard = placeStone(board, position, player)
 
-  // Check all 4 main directions
-  const directionsToCheck: Direction[] = [
-    [0, 1],   // Horizontal
-    [1, 0],   // Vertical
-    [1, 1],   // Diagonal \
-    [1, -1],  // Diagonal /
-  ]
-
-  for (const direction of directionsToCheck) {
+  for (const direction of FOUR_DIRECTIONS) {
     const pattern = detectPattern(
       testBoard,
       position,
@@ -320,6 +300,7 @@ export function createInitialGameState(
     moveHistory: [],
     blackCount: 0,
     whiteCount: 0,
+    undoState: null,
   }
 }
 
@@ -361,13 +342,4 @@ export function getRelevantPositions(board: Board, range: number = 2): Position[
     const [row, col] = key.split(',').map(Number)
     return { row, col }
   })
-}
-
-/**
- * Converts move to readable notation (e.g., "H8")
- */
-export function moveToNotation(move: Move): string {
-  const col = String.fromCharCode(65 + move.position.col) // A-O
-  const row = move.position.row + 1 // 1-15
-  return `${col}${row}`
 }

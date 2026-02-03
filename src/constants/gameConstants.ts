@@ -92,14 +92,27 @@ export const HARD_AI_OPPONENT_PATTERN_MULTIPLIER = 1.3
 export const MOVE_EVAL_OPPONENT_MULTIPLIER = 0.9
 
 // =============================================================================
-// Board Configuration (re-exported from types for convenience)
+// Board Configuration
 // =============================================================================
-
-/** Standard Gomoku board size */
-export const GOMOKU_BOARD_SIZE = 15
 
 /** Number of stones in a row needed to win */
 export const WIN_LENGTH = 5
 
 /** Last row/column index (BOARD_SIZE - 1) */
 export const BOARD_LAST_INDEX = 14
+
+// =============================================================================
+// Storage Keys
+// =============================================================================
+
+/** LocalStorage key for audio mute setting */
+export const STORAGE_KEY_AUDIO_MUTED = 'gomoku-audio-muted'
+
+/** LocalStorage key for leaderboard stats */
+export const STORAGE_KEY_LEADERBOARD = 'gomoku-leaderboard'
+
+/** LocalStorage key for tutorial completion */
+export const STORAGE_KEY_TUTORIAL_COMPLETED = 'gomoku-tutorial-completed'
+
+/** Delay before showing tutorial on first visit (ms) */
+export const TUTORIAL_SHOW_DELAY_MS = 500
