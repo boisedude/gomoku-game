@@ -37,7 +37,6 @@ export function VictoryDialog({
   character,
 }: VictoryDialogProps) {
   const isDraw = winner === null
-  const margin = Math.abs(blackCount - whiteCount)
   const [victoryMessage, setVictoryMessage] = useState('')
 
   // Select random message when dialog opens (in effect to comply with React 19 purity rules)
@@ -48,11 +47,11 @@ export function VictoryDialog({
       let message: string
       if (isDraw) {
         const drawMessages = [
-          `It's a perfect tie! Both you and ${character.name} are equally matched!`,
-          `A draw in Gomoku? ${character.name} is impressed with your strategic balance!`,
-          'The stones have spoken: Neither side prevails. Rematch?',
-          `Tied at the buzzer! ${character.name} wants a rematch to settle this!`,
-          'A perfect stalemate! Five in a row is harder than it looks!',
+          `A tie. You and ${character.name} are evenly matched.`,
+          `A draw. ${character.name} is impressed with your balance.`,
+          'Neither side prevails. Rematch?',
+          `Dead even. ${character.name} wants a rematch.`,
+          'A stalemate. Five in a row is harder than it looks.',
         ]
         message = drawMessages[Math.floor(Math.random() * drawMessages.length)]
       } else if (winner === 1) {
@@ -70,114 +69,37 @@ export function VictoryDialog({
     }
   }, [open, isDraw, winner, character])
 
+  const art = winner === 1 ? character.loseImage : winner === 2 ? character.winImage : character.playAgainImage
+  const result = isDraw ? 'Draw' : winner === 1 ? `You beat ${character.name}` : `${character.name} won`
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-center text-2xl">
-            {isDraw ? '🤝 Draw!' : winner === 1 ? `You Beat ${character.name}!` : `${character.name} Wins!`}
-          </DialogTitle>
-          <DialogDescription className="text-center text-base">
-            {victoryMessage}
-          </DialogDescription>
+      <DialogContent className="sm:max-w-sm" hideClose>
+        <DialogHeader className="items-center text-center sm:text-center">
+          <img
+            src={art}
+            alt={character.name}
+            className="mb-2 max-h-44 w-auto object-contain"
+            onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
+              e.currentTarget.src = character.avatar
+            }}
+          />
+          <DialogTitle className="text-xl">{result}</DialogTitle>
+          <DialogDescription>{victoryMessage}</DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-4 py-4">
-          {/* Character Avatar */}
-          <div className="flex items-center justify-center py-2">
-            {winner === 1 ? (
-              <img
-                src={character.loseImage}
-                alt={`${character.name} loses`}
-                className="max-h-40 w-auto object-contain"
-                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  // Fallback to avatar if specific image not found
-                  e.currentTarget.src = character.avatar
-                }}
-              />
-            ) : winner === 2 ? (
-              <img
-                src={character.winImage}
-                alt={`${character.name} wins`}
-                className="max-h-40 w-auto object-contain"
-                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  // Fallback to avatar if specific image not found
-                  e.currentTarget.src = character.avatar
-                }}
-              />
-            ) : (
-              <img
-                src={character.playAgainImage}
-                alt={`${character.name}`}
-                className="max-h-40 w-auto object-contain"
-                onError={(e: React.SyntheticEvent<HTMLImageElement>) => {
-                  // Fallback to avatar if specific image not found
-                  e.currentTarget.src = character.avatar
-                }}
-              />
-            )}
-          </div>
+        <p className="text-balance text-center text-sm text-muted-foreground">
+          Stones placed: you {blackCount}, {character.name} {whiteCount}.{' '}
+          {isDraw
+            ? 'The board is full.'
+            : `${winner === 1 ? 'You' : character.name} won with five in a row.`}
+        </p>
 
-          {/* Visual Result Representation */}
-          <div className="flex items-center justify-center gap-6 py-4">
-            {winner === 1 ? (
-              <>
-                <div className="relative">
-                  <div className="h-24 w-24 rounded-full bg-gradient-to-br from-gray-800 to-black shadow-2xl ring-4 ring-yellow-400 animate-pulse" />
-                  <div className="absolute -right-2 -top-2 text-4xl">👑</div>
-                </div>
-                <div className="text-5xl">🏆</div>
-              </>
-            ) : winner === 2 ? (
-              <>
-                <div className="text-5xl opacity-50">😔</div>
-                <div className="relative">
-                  <div className="h-24 w-24 rounded-full bg-gradient-to-br from-white to-gray-100 shadow-2xl ring-4 ring-yellow-400 animate-pulse" />
-                  <div className="absolute -right-2 -top-2 text-4xl">👑</div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-gray-800 to-black shadow-lg" />
-                <div className="text-4xl">🤝</div>
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-white to-gray-100 shadow-lg ring-2 ring-gray-300" />
-              </>
-            )}
-          </div>
-
-          {/* Final Score */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between rounded-lg bg-muted p-3">
-              <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-gradient-to-br from-gray-800 to-black shadow-md" />
-                <span className="font-medium">You (Black)</span>
-              </div>
-              <span className={`text-xl font-bold ${winner === 1 ? 'text-green-600' : ''}`}>
-                {blackCount}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-lg bg-muted p-3">
-              <div className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-gradient-to-br from-white to-gray-100 shadow-md ring-1 ring-gray-300" />
-                <span className="font-medium">{character.name} (White)</span>
-              </div>
-              <span className={`text-xl font-bold ${winner === 2 ? 'text-green-600' : ''}`}>
-                {whiteCount}
-              </span>
-            </div>
-            {!isDraw && (
-              <div className="text-center text-sm text-muted-foreground">
-                Margin: {margin} stones
-              </div>
-            )}
-          </div>
-        </div>
-
-        <DialogFooter className="flex-col gap-2 sm:flex-row">
-          <Button onClick={onPlayAgain} className="w-full sm:w-auto" aria-label="Start a new game">
-            Play Again
+        <DialogFooter className="gap-2 sm:justify-center sm:space-x-0">
+          <Button onClick={onPlayAgain} className="h-11">
+            Play again
           </Button>
-          <Button onClick={onClose} variant="outline" className="w-full sm:w-auto" aria-label="Close victory dialog">
+          <Button onClick={onClose} variant="ghost" className="h-11">
             Close
           </Button>
         </DialogFooter>

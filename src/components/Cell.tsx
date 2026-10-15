@@ -19,7 +19,6 @@ interface CellProps {
   onClick: (row: number, col: number) => void
   isLastPlaced: boolean
   isWinning: boolean
-  winningIndex?: number
   isStarPoint?: boolean
   currentPlayer?: 1 | 2
   disabled?: boolean
@@ -32,7 +31,6 @@ export const Cell = memo(function Cell({
   onClick,
   isLastPlaced,
   isWinning,
-  winningIndex = -1,
   isStarPoint = false,
   currentPlayer = 1,
   disabled = false,
@@ -99,7 +97,7 @@ export const Cell = memo(function Cell({
         aspect-square
         relative
         ${player === null && !disabled ? 'go-cell' : 'go-cell-occupied'}
-        focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-primary focus-visible:outline-none
       `}
       onClick={handleClick}
       onKeyDown={(e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -146,8 +144,8 @@ export const Cell = memo(function Cell({
         <div
           className="absolute bg-stone-800 rounded-full pointer-events-none z-10"
           style={{
-            width: '8px',
-            height: '8px',
+            width: '6px',
+            height: '6px',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
@@ -177,18 +175,13 @@ export const Cell = memo(function Cell({
             go-stone
             ${player === 1 ? 'go-stone-black' : 'go-stone-white'}
             ${isAnimating ? 'animate-stone-place' : ''}
-            ${isWinning ? `animate-winning-glow winning-stone-${winningIndex >= 0 ? winningIndex : 0}` : ''}
-            ${isLastPlaced && !isWinning ? 'animate-last-move' : ''}
+            ${isWinning ? 'go-stone-winning' : ''}
           `}
         >
           {/* Last placed indicator dot */}
           {isLastPlaced && !isWinning && (
             <div
-              className={`
-                absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-                w-[20%] h-[20%] rounded-full
-                ${player === 1 ? 'bg-white/70' : 'bg-black/50'}
-              `}
+              className="go-last-dot absolute top-1/2 left-1/2 h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 rounded-full"
             />
           )}
         </div>

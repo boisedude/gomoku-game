@@ -9,10 +9,15 @@ import { GameControls } from '@/components/GameControls'
 import { VictoryDialog } from '@/components/VictoryDialog'
 import { LeaderboardDialog } from '@/components/LeaderboardDialog'
 import { Tutorial } from '@/components/Tutorial'
+import { OpponentChip } from '@/components/OpponentChip'
+import { Button } from '@/components/ui/button'
+import { ArrowLeftIcon, VolumeIcon, VolumeOffIcon, HelpIcon } from '@shared/icons'
 import { useGomokuGame } from '@/hooks/useGomokuGame'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { useGameAudio } from '@/hooks/useGameAudio'
 import { useCharacterSelection } from '@/hooks/useCharacterSelection'
+import { getInitialDifficulty, hasCharacterParam } from '@/lib/characterUrl'
+import { reportArcadeResult } from '@/lib/arcadeResult'
 import { STORAGE_KEY_TUTORIAL_COMPLETED, TUTORIAL_SHOW_DELAY_MS } from '@/constants/gameConstants'
 
 export function GomokuGame() {
@@ -26,29 +31,35 @@ export function GomokuGame() {
     canUndo,
     isLastPlaced,
     isWinningPosition,
-  } = useGomokuGame()
+  } = useGomokuGame(getInitialDifficulty())
 
-  const { character, changeCharacter } = useCharacterSelection(gameState.difficulty)
+  const { character } = useCharacterSelection(gameState.difficulty)
   const { stats, recordWin, recordLoss, recordDraw, updatePlayerName, resetStats } = useLeaderboard()
-  const { playDiscPlace, playVictory, playDefeat, playDraw } = useGameAudio()
+  const { playDiscPlace, playVictory, playDefeat, playDraw, isMuted, toggleMute } = useGameAudio()
 
   const [showVictoryDialog, setShowVictoryDialog] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(() => {
-    return localStorage.getItem(STORAGE_KEY_TUTORIAL_COMPLETED) === 'true'
+    try {
+      return localStorage.getItem(STORAGE_KEY_TUTORIAL_COMPLETED) === 'true'
+    } catch {
+      return false
+    }
   })
+  // The arcade passes ?character=, so never greet those players with a tutorial
+  const [openedFromArcade] = useState(() => hasCharacterParam())
   const prevStatusRef = useRef(gameState.status)
 
   // Show tutorial on first visit
   useEffect(() => {
-    if (!hasCompletedTutorial) {
+    if (!hasCompletedTutorial && !openedFromArcade) {
       const timer = setTimeout(() => {
         setShowTutorial(true)
       }, TUTORIAL_SHOW_DELAY_MS)
       return () => clearTimeout(timer)
     }
-  }, [hasCompletedTutorial])
+  }, [hasCompletedTutorial, openedFromArcade])
 
   // Handle tutorial completion
   const handleTutorialComplete = useCallback(() => {
@@ -74,10 +85,12 @@ export function GomokuGame() {
           // Player wins
           playVictory()
           recordWin(0, totalMoves, false)
+          reportArcadeResult(gameState.difficulty, 1)
         } else if (gameState.winner === 2) {
           // AI wins
           playDefeat()
           recordLoss(totalMoves)
+          reportArcadeResult(gameState.difficulty, 2)
         }
       } else if (gameState.status === 'draw') {
         playDraw()
@@ -94,6 +107,7 @@ export function GomokuGame() {
   }, [
     gameState.status,
     gameState.winner,
+    gameState.difficulty,
     gameState.moveHistory.length,
     playVictory,
     playDefeat,
@@ -118,9 +132,8 @@ export function GomokuGame() {
   const handleDifficultyChange = useCallback(
     (difficulty: 'easy' | 'medium' | 'hard') => {
       changeDifficulty(difficulty)
-      changeCharacter(difficulty)
     },
-    [changeDifficulty, changeCharacter]
+    [changeDifficulty]
   )
 
   // Keyboard shortcut for undo (U key)
@@ -145,112 +158,102 @@ export function GomokuGame() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [canUndo, undoMove])
 
+  const opponent = character.name
+  const turnText =
+    gameState.status === 'won'
+      ? gameState.winner === 1
+        ? 'You won'
+        : `${opponent} won`
+      : gameState.status === 'draw'
+        ? 'Draw'
+        : gameState.currentPlayer === 1
+          ? 'Your turn'
+          : `${opponent} is thinking`
+  const turnActive =
+    gameState.status !== 'playing' ? 'over' : gameState.currentPlayer === 1 ? 'you' : 'opponent'
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-start bg-gradient-to-br from-amber-50 to-amber-100 p-2 sm:p-4 sm:justify-center">
-      {/* Return to Arcade Button */}
-      <div className="w-full max-w-md mb-3 sm:mb-4">
-        <a href="https://www.mcooper.com/arcade/" className="block">
-          <button
-            className="w-full sm:w-auto h-10 sm:h-11 px-4 text-sm sm:text-base font-semibold border-2 border-amber-300 rounded-lg bg-white hover:bg-amber-50 hover:border-amber-500 transition-colors"
-          >
-            ← Return to Arcade
-          </button>
-        </a>
-      </div>
-
-      {/* Header */}
-      <div className="mb-6 text-center">
-        <h1 className="mb-2 text-4xl font-bold text-amber-900">Gomoku</h1>
-        <p className="text-lg text-amber-700">
-          Five in a Row - Challenge {character.name}
-        </p>
-      </div>
-
-      {/* Character Info */}
-      <div className="mb-4 flex items-center gap-4 rounded-lg bg-white p-4 shadow-lg">
-        <img
-          src={character.avatar}
-          alt={character.name}
-          className="h-16 w-16 rounded-full border-2 border-amber-500"
-        />
-        <div>
-          <h3 className="text-xl font-bold text-gray-800">
-            {character.name} {character.emoji}
-          </h3>
-          <p className="text-sm text-gray-600">{character.playingStyle}</p>
-        </div>
-      </div>
-
-      {/* Game Info */}
-      <div className="mb-4 flex gap-8 rounded-lg bg-white p-4 shadow-lg">
-        <div className="text-center">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-900 to-black border-2 border-gray-600" />
-            <div className="text-2xl font-bold text-gray-900">{gameState.blackCount}</div>
-          </div>
-          <div className="text-sm text-gray-600">Your Stones</div>
-        </div>
-        <div className="border-l border-gray-300" />
-        <div className="text-center">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-gray-100 to-white border-2 border-gray-400" />
-            <div className="text-2xl font-bold text-gray-800">{gameState.whiteCount}</div>
-          </div>
-          <div className="text-sm text-gray-600">{character.name}'s Stones</div>
-        </div>
-      </div>
-
-      {/* Turn indicator */}
-      <div className="mb-4 text-center">
-        <p className="text-lg font-semibold text-gray-700">
-          {gameState.currentPlayer === 1 ? '⚫ Your Turn (Black)' : `⚪ ${character.name}'s Turn (White)`}
-        </p>
-        <p className="text-sm text-gray-600">Get 5 in a row to win!</p>
-      </div>
-
-      {/* Aria-live region for screen reader announcements */}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="sr-only"
+    <div className="arcade-page">
+      <a
+        href="#game-board"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-card focus:px-4 focus:py-2 focus:text-sm focus:text-foreground"
       >
-        {gameState.status === 'playing'
-          ? gameState.currentPlayer === 1
-            ? 'Your turn. You are playing black stones.'
-            : `${character.name}'s turn. They are playing white stones.`
-          : gameState.status === 'won'
-            ? gameState.winner === 1
-              ? 'Congratulations! You won the game!'
-              : `${character.name} won the game.`
-            : 'The game ended in a draw.'}
-      </div>
+        Skip to game board
+      </a>
 
-      {/* Board */}
-      <Board
-        board={gameState.board}
-        onSquareClick={handleSquareClick}
-        isLastPlaced={isLastPlaced}
-        isWinningPosition={isWinningPosition}
-        winningLine={gameState.winningLine}
-        disabled={isAnimating || gameState.status !== 'playing'}
-        currentPlayer={gameState.currentPlayer}
-      />
+      <header className="arcade-topbar">
+        <div className="flex flex-1 items-center">
+          <a
+            href="https://www.mcooper.com/arcade/"
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeftIcon size={18} />
+            Arcade
+          </a>
+        </div>
+        <h1 className="arcade-display sr-only text-xl sm:not-sr-only">Gomoku</h1>
+        <div className="flex flex-1 items-center justify-end gap-1">
+          <OpponentChip
+            character={character}
+            difficulty={gameState.difficulty}
+            onDifficultyChange={handleDifficultyChange}
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 shrink-0"
+            onClick={toggleMute}
+            aria-label={isMuted ? 'Unmute sound effects' : 'Mute sound effects'}
+          >
+            {isMuted ? <VolumeOffIcon /> : <VolumeIcon />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-11 w-11 shrink-0"
+            onClick={() => setShowTutorial(true)}
+            aria-label="How to play"
+          >
+            <HelpIcon />
+          </Button>
+        </div>
+      </header>
 
-      {/* Game Controls */}
-      <div className="mt-8">
+      <main className="arcade-stage">
+        <div className="arcade-score" aria-live="polite">
+          <div>
+            <strong>{gameState.blackCount}</strong>
+            You
+          </div>
+          <div className="arcade-turn" data-active={turnActive}>
+            {turnText}
+          </div>
+          <div>
+            <strong>{gameState.whiteCount}</strong>
+            {opponent}
+          </div>
+        </div>
+
+        <div id="game-board" className="flex w-full justify-center">
+          <Board
+            board={gameState.board}
+            onSquareClick={handleSquareClick}
+            isLastPlaced={isLastPlaced}
+            isWinningPosition={isWinningPosition}
+            disabled={isAnimating || gameState.status !== 'playing'}
+            currentPlayer={gameState.currentPlayer}
+          />
+        </div>
+
         <GameControls
-          difficulty={gameState.difficulty}
-          onDifficultyChange={handleDifficultyChange}
           onNewGame={handleNewGame}
           onShowLeaderboard={() => setShowLeaderboard(true)}
           onShowHelp={() => setShowTutorial(true)}
           onUndo={undoMove}
           canUndo={canUndo}
-          gameMode={gameState.mode}
         />
-      </div>
+      </main>
 
-      {/* Victory Dialog */}
       {showVictoryDialog && (
         <VictoryDialog
           open={showVictoryDialog}
@@ -263,7 +266,6 @@ export function GomokuGame() {
         />
       )}
 
-      {/* Leaderboard Dialog */}
       {showLeaderboard && (
         <LeaderboardDialog
           open={showLeaderboard}
@@ -271,14 +273,16 @@ export function GomokuGame() {
           onClose={() => setShowLeaderboard(false)}
           onUpdatePlayerName={updatePlayerName}
           onResetStats={resetStats}
-          characterName={character.name}
         />
       )}
 
-      {/* Tutorial Dialog */}
       <Tutorial
         open={showTutorial}
-        onClose={() => setShowTutorial(false)}
+        opponentName={opponent}
+        onClose={() => {
+          setShowTutorial(false)
+          handleTutorialComplete()
+        }}
         onComplete={handleTutorialComplete}
       />
     </div>

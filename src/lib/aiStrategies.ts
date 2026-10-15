@@ -3,7 +3,7 @@
  * Implements different difficulty levels with pattern-based evaluation
  */
 
-import type { Board, Player, Position, Difficulty, ThreatEvaluation } from '@/types/gomoku.types'
+import type { Board, Player, Position, Difficulty, ThreatEvaluation, Pattern } from '@/types/gomoku.types'
 import {
   placeStone,
   checkWin,
@@ -99,6 +99,7 @@ function getHardMove(board: Board, player: Player): Position | null {
 
   // Evaluate all positions
   const evaluations: ThreatEvaluation[] = []
+  const ownPatterns = new Map<ThreatEvaluation, Pattern[]>()
 
   for (const pos of relevantPositions) {
     const myPatterns = evaluatePosition(board, pos, player)
@@ -143,17 +144,41 @@ function getHardMove(board: Board, player: Player): Position | null {
     totalScore += opponentOpenFours * BONUS_BLOCK_OPEN_FOUR
     totalScore += opponentFours * BONUS_BLOCK_FOUR
 
-    evaluations.push({
+    const evaluation: ThreatEvaluation = {
       position: pos,
       threats: [...myPatterns, ...opponentPatterns],
       totalScore,
       isWinningMove,
       blocksWinningMove,
-    })
+    }
+    ownPatterns.set(evaluation, myPatterns)
+    evaluations.push(evaluation)
   }
 
+  const byScore = (a: ThreatEvaluation, b: ThreatEvaluation) => b.totalScore - a.totalScore
+  const best = (list: ThreatEvaluation[]) => [...list].sort(byScore)[0].position
+
+  // Tactical moves are forced, never randomized:
+  // 1. win now, 2. block an opponent five, 3. make an open four,
+  // 4. stop the opponent from making an open four (blocks open threes).
+  const wins = evaluations.filter(e => e.isWinningMove)
+  if (wins.length > 0) return best(wins)
+
+  const blocks = evaluations.filter(e => e.blocksWinningMove)
+  if (blocks.length > 0) return best(blocks)
+
+  const ownOpenFours = evaluations.filter(e =>
+    ownPatterns.get(e)?.some(t => t.type === 'open-four')
+  )
+  if (ownOpenFours.length > 0) return best(ownOpenFours)
+
+  const stopOpenFours = evaluations.filter(e =>
+    e.threats.some(t => t.type === 'open-four' && !ownPatterns.get(e)?.includes(t))
+  )
+  if (stopOpenFours.length > 0) return best(stopOpenFours)
+
   // Sort by score and pick best
-  evaluations.sort((a, b) => b.totalScore - a.totalScore)
+  evaluations.sort(byScore)
 
   // Add some randomness to top moves to make it less predictable
   const topMoves = evaluations.slice(0, AI_HARD_TOP_MOVES_COUNT)

@@ -16,6 +16,7 @@ import { Button } from './ui/button'
 
 interface TutorialProps {
   open: boolean
+  opponentName: string
   onClose: () => void
   onComplete: () => void
 }
@@ -27,126 +28,80 @@ interface TutorialStep {
   image?: React.ReactNode
 }
 
-const tutorialSteps: TutorialStep[] = [
-  {
-    title: 'Welcome to Gomoku!',
-    description:
-      "Gomoku, also known as Five in a Row, is a classic strategy game with simple rules but deep tactics. Let's learn how to play!",
-    image: (
-      <div className="flex items-center justify-center py-4">
-        <div className="grid grid-cols-5 gap-1">
-          {[...Array(25)].map((_, i) => {
-            const isBlack = [6, 7, 8, 9, 10].includes(i)
-            return (
-              <div
-                key={i}
-                className={`h-8 w-8 rounded-full border-2 ${
-                  isBlack
-                    ? 'bg-gradient-to-br from-gray-900 to-black border-gray-600'
-                    : 'border-amber-300 bg-amber-100'
-                }`}
-              />
-            )
-          })}
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: 'The Goal',
-    description:
-      'Your objective is simple: be the first to get FIVE of your stones in a row. You can win horizontally, vertically, or diagonally.',
-    tip: 'Plan ahead! Every stone you place should either advance your winning line or block your opponent.',
-  },
-  {
-    title: 'You Are Black',
-    description:
-      'You play as Black stones, and the AI plays as White. Black always goes first, giving you a slight advantage!',
-    image: (
-      <div className="flex items-center justify-center gap-6 py-4">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-gradient-to-br from-gray-900 to-black border-2 border-gray-600 shadow-lg" />
-          <div className="mt-2 text-sm font-semibold">You (Black)</div>
-        </div>
-        <div className="text-3xl font-bold text-gray-400">vs</div>
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-gradient-to-br from-gray-100 to-white border-2 border-gray-400 shadow-lg" />
-          <div className="mt-2 text-sm font-semibold">AI (White)</div>
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: 'How to Play',
-    description:
-      'Click on any empty intersection on the board to place your stone. Once placed, stones cannot be moved. Then the AI takes its turn automatically.',
-    tip: 'The center of the board is the most strategic position to start!',
-  },
-  {
-    title: 'Winning Patterns',
-    description:
-      'You win by getting five stones in a row. Watch for all directions: horizontal (-), vertical (|), and both diagonal directions (/ and \\).',
-    image: (
-      <div className="flex flex-wrap items-center justify-center gap-4 py-4">
-        <div className="text-center">
-          <div className="flex gap-1">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="h-6 w-6 rounded-full bg-gradient-to-br from-gray-900 to-black border border-gray-600"
-              />
-            ))}
-          </div>
-          <div className="mt-1 text-xs text-gray-600">Horizontal</div>
-        </div>
-        <div className="text-center">
-          <div className="flex flex-col gap-1">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="h-6 w-6 rounded-full bg-gradient-to-br from-gray-900 to-black border border-gray-600"
-              />
-            ))}
-          </div>
-          <div className="mt-1 text-xs text-gray-600">Vertical</div>
-        </div>
-        <div className="text-center">
-          <div className="flex flex-col gap-1">
-            {[...Array(5)].map((_, i) => (
-              <div
-                key={i}
-                className="h-6 w-6 rounded-full bg-gradient-to-br from-gray-900 to-black border border-gray-600"
-                style={{ marginLeft: `${i * 8}px` }}
-              />
-            ))}
-          </div>
-          <div className="mt-1 text-xs text-gray-600">Diagonal</div>
-        </div>
-      </div>
-    ),
-    tip: 'Try to create multiple threats at once. Your opponent can only block one direction at a time!',
-  },
-  {
-    title: 'Strategy Tips',
-    description:
-      'Build "open" lines with both ends free - they are harder to block. Create forks with two open-ended threes, forcing your opponent into an impossible situation.',
-    tip: 'An open-ended four (4 stones with both ends free) is an unstoppable winning move!',
-  },
-  {
-    title: 'Choose Your Challenge',
-    description:
-      "Start on Easy mode to learn the basics. When you're ready, challenge yourself with Medium or Hard difficulty. The Hard AI thinks many moves ahead!",
-    tip: 'Easy is great for practice. Medium teaches strategy. Hard is for experts!',
-  },
-  {
-    title: 'Ready to Play!',
-    description:
-      "You're all set! Remember: control the center, think ahead, create multiple threats, and watch for your opponent's moves. Good luck!",
-    tip: 'You can access this tutorial anytime by clicking "How to Play" in the game controls.',
-  },
-]
+const stone = 'rounded-full bg-gradient-to-br from-neutral-700 to-black'
+const whiteStone = 'rounded-full bg-gradient-to-br from-white to-neutral-300'
 
-export function Tutorial({ open, onClose, onComplete }: TutorialProps) {
+function getSteps(opponent: string): TutorialStep[] {
+  return [
+    {
+      title: 'Welcome to gomoku',
+      description:
+        'Gomoku, also known as five in a row, is a classic strategy game with simple rules and deep tactics.',
+      image: (
+        <div className="flex items-center justify-center gap-1.5">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className={`h-8 w-8 ${stone}`} />
+          ))}
+        </div>
+      ),
+    },
+    {
+      title: 'The goal',
+      description:
+        'Be the first to get five of your stones in a row. You can win horizontally, vertically, or diagonally.',
+      tip: 'Every stone should either advance your own line or block your opponent.',
+    },
+    {
+      title: 'You play black',
+      description: `You play black and ${opponent} plays white. Black always goes first, which gives you a slight advantage.`,
+      image: (
+        <div className="flex items-center justify-center gap-6">
+          <div className="text-center">
+            <div className={`mx-auto h-12 w-12 ${stone}`} />
+            <div className="mt-2 text-sm font-semibold">You</div>
+          </div>
+          <div className="text-muted-foreground">vs</div>
+          <div className="text-center">
+            <div className={`mx-auto h-12 w-12 ${whiteStone}`} />
+            <div className="mt-2 text-sm font-semibold">{opponent}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: 'How a turn works',
+      description: `Click any empty intersection to place a stone. Stones never move once placed. Then ${opponent} takes a turn.`,
+      tip: 'The centre of the board is a strong place to start.',
+    },
+    {
+      title: 'Winning patterns',
+      description:
+        'Watch every direction: horizontal, vertical, and both diagonals. Five in a row wins, and the winning stones are ringed.',
+      tip: 'Try to make two threats at once. Your opponent can only block one.',
+    },
+    {
+      title: 'Strategy',
+      description:
+        'Build open lines with both ends free, since they are harder to block. A fork of two open threes forces your opponent into a corner.',
+      tip: 'An open four, with both ends free, cannot be stopped.',
+    },
+    {
+      title: 'Choose your opponent',
+      description:
+        'Start with Bella to learn the basics. Coop plays a tougher game, and Bentley thinks many moves ahead.',
+      tip: 'Click the opponent chip at the top to switch at any time.',
+    },
+    {
+      title: 'Ready to play',
+      description:
+        "Control the centre, think ahead, make several threats, and watch your opponent's moves.",
+      tip: 'Click "How to play" any time to see this again.',
+    },
+  ]
+}
+
+export function Tutorial({ open, opponentName, onClose, onComplete }: TutorialProps) {
+  const tutorialSteps = getSteps(opponentName)
   const [currentStep, setCurrentStep] = useState(0)
   const step = tutorialSteps[currentStep]
   const isLastStep = currentStep === tutorialSteps.length - 1
@@ -188,52 +143,45 @@ export function Tutorial({ open, onClose, onComplete }: TutorialProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Visual */}
-          {step.image && <div>{step.image}</div>}
+        <div className="space-y-4 py-2">
+          {step.image && <div className="py-2">{step.image}</div>}
 
-          {/* Description */}
           <p className="text-center text-muted-foreground">{step.description}</p>
 
-          {/* Tip */}
           {step.tip && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
-              <div className="mb-1 text-sm font-semibold text-amber-900 dark:text-amber-100">
-                Tip
-              </div>
-              <p className="text-sm text-amber-800 dark:text-amber-200">{step.tip}</p>
-            </div>
+            <p className="rounded-md border bg-secondary p-3 text-sm text-muted-foreground">
+              {step.tip}
+            </p>
           )}
 
-          {/* Progress dots */}
           <div className="flex justify-center gap-2 pt-2">
             {tutorialSteps.map((_, index) => (
               <div
                 key={index}
                 className={`h-2 w-2 rounded-full transition-all ${
                   index === currentStep
-                    ? 'w-6 bg-amber-600'
+                    ? 'w-6 bg-primary'
                     : index < currentStep
-                      ? 'bg-amber-400'
-                      : 'bg-gray-300'
+                      ? 'bg-primary/50'
+                      : 'bg-muted'
                 }`}
               />
             ))}
           </div>
         </div>
 
-        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between">
-          <Button variant="ghost" onClick={handleSkip} className="sm:w-auto">
-            Skip Tutorial
+        <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:space-x-0">
+          <Button variant="ghost" onClick={handleSkip} className="h-11 sm:w-auto">
+            Skip
           </Button>
           <div className="flex gap-2">
             {currentStep > 0 && (
-              <Button variant="outline" onClick={handleBack}>
+              <Button variant="outline" onClick={handleBack} className="h-11">
                 Back
               </Button>
             )}
-            <Button onClick={handleNext} className="bg-amber-600 hover:bg-amber-700">
-              {isLastStep ? "Let's Play!" : 'Next'}
+            <Button onClick={handleNext} className="h-11">
+              {isLastStep ? 'Play' : 'Next'}
             </Button>
           </div>
         </DialogFooter>
