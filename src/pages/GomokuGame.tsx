@@ -10,13 +10,16 @@ import { VictoryDialog } from '@/components/VictoryDialog'
 import { LeaderboardDialog } from '@/components/LeaderboardDialog'
 import { Tutorial } from '@/components/Tutorial'
 import { OpponentChip } from '@/components/OpponentChip'
+import { ConfirmOpponentDialog } from '@/components/ConfirmOpponentDialog'
 import { Button } from '@/components/ui/button'
 import { ArrowLeftIcon, VolumeIcon, VolumeOffIcon, HelpIcon } from '@shared/icons'
 import { useGomokuGame } from '@/hooks/useGomokuGame'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { useGameAudio } from '@/hooks/useGameAudio'
 import { useCharacterSelection } from '@/hooks/useCharacterSelection'
-import { getInitialDifficulty, hasCharacterParam } from '@/lib/characterUrl'
+import { getInitialDifficulty, hasCharacterParam, difficultyToCharacterId } from '@/lib/characterUrl'
+import { getCharacterById } from '@shared/characters'
+import type { Difficulty } from '@/types/gomoku.types'
 import { reportArcadeResult } from '@/lib/arcadeResult'
 import { STORAGE_KEY_TUTORIAL_COMPLETED, TUTORIAL_SHOW_DELAY_MS } from '@/constants/gameConstants'
 
@@ -26,7 +29,6 @@ export function GomokuGame() {
     isAnimating,
     handleSquareClick,
     startNewGame,
-    changeDifficulty,
     undoMove,
     canUndo,
     isLastPlaced,
@@ -40,6 +42,7 @@ export function GomokuGame() {
   const [showVictoryDialog, setShowVictoryDialog] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
   const [showTutorial, setShowTutorial] = useState(false)
+  const [pendingDifficulty, setPendingDifficulty] = useState<Difficulty | null>(null)
   const [hasCompletedTutorial, setHasCompletedTutorial] = useState(() => {
     try {
       return localStorage.getItem(STORAGE_KEY_TUTORIAL_COMPLETED) === 'true'
@@ -129,11 +132,33 @@ export function GomokuGame() {
     startNewGame()
   }, [startNewGame])
 
-  const handleDifficultyChange = useCallback(
-    (difficulty: 'easy' | 'medium' | 'hard') => {
-      changeDifficulty(difficulty)
+  // Changing opponent always starts a fresh game, so a game in progress can
+  // never be finished (and recorded) against a different opponent.
+  const applyDifficultyChange = useCallback(
+    (difficulty: Difficulty) => {
+      setShowVictoryDialog(false)
+      startNewGame(difficulty)
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.set('character', difficultyToCharacterId[difficulty])
+        window.history.replaceState({}, '', url.toString())
+      } catch {
+        // URL update is cosmetic
+      }
     },
-    [changeDifficulty]
+    [startNewGame]
+  )
+
+  const handleDifficultyChange = useCallback(
+    (difficulty: Difficulty) => {
+      if (difficulty === gameState.difficulty) return
+      if (gameState.status === 'playing' && gameState.moveHistory.length > 0) {
+        setPendingDifficulty(difficulty)
+      } else {
+        applyDifficultyChange(difficulty)
+      }
+    },
+    [gameState.difficulty, gameState.status, gameState.moveHistory.length, applyDifficultyChange]
   )
 
   // Keyboard shortcut for undo (U key)
@@ -222,14 +247,14 @@ export function GomokuGame() {
       <main className="arcade-stage">
         <div className="arcade-score" aria-live="polite">
           <div>
-            <strong>{gameState.blackCount}</strong>
+            <strong>{stats.wins}</strong>
             You
           </div>
           <div className="arcade-turn" data-active={turnActive}>
             {turnText}
           </div>
           <div>
-            <strong>{gameState.whiteCount}</strong>
+            <strong>{stats.losses}</strong>
             {opponent}
           </div>
         </div>
@@ -253,6 +278,16 @@ export function GomokuGame() {
           canUndo={canUndo}
         />
       </main>
+
+      <ConfirmOpponentDialog
+        open={pendingDifficulty !== null}
+        opponentName={pendingDifficulty ? getCharacterById(difficultyToCharacterId[pendingDifficulty]).name : ''}
+        onCancel={() => setPendingDifficulty(null)}
+        onConfirm={() => {
+          if (pendingDifficulty) applyDifficultyChange(pendingDifficulty)
+          setPendingDifficulty(null)
+        }}
+      />
 
       {showVictoryDialog && (
         <VictoryDialog

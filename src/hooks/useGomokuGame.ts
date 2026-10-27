@@ -202,7 +202,7 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
   /**
    * Starts a new game
    */
-  const startNewGame = useCallback(() => {
+  const startNewGame = useCallback((newDifficulty?: Difficulty) => {
     // Clear any pending AI moves
     if (aiMoveTimeoutRef.current) {
       clearTimeout(aiMoveTimeoutRef.current)
@@ -213,7 +213,7 @@ export function useGomokuGame(initialDifficulty: Difficulty = 'medium') {
       animationTimeoutRef.current = null
     }
     aiMoveScheduledRef.current = false
-    setGameState(createInitialGameState('pvc', gameState.difficulty))
+    setGameState(createInitialGameState('pvc', newDifficulty ?? gameState.difficulty))
     setLastPlacedPosition(null)
     setIsAnimating(false)
     setIsAIThinking(false)
