@@ -14,6 +14,7 @@ import { ConfirmOpponentDialog } from '@/components/ConfirmOpponentDialog'
 import { Button } from '@/components/ui/button'
 import { ArrowLeftIcon, VolumeIcon, VolumeOffIcon, HelpIcon } from '@shared/icons'
 import { useGomokuGame } from '@/hooks/useGomokuGame'
+import { usePlacementPreview } from '@/hooks/usePlacementPreview'
 import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { useGameAudio } from '@/hooks/useGameAudio'
 import { useCharacterSelection } from '@/hooks/useCharacterSelection'
@@ -34,6 +35,9 @@ export function GomokuGame() {
     isLastPlaced,
     isWinningPosition,
   } = useGomokuGame(getInitialDifficulty())
+
+  const boardLocked = isAnimating || gameState.status !== 'playing' || gameState.currentPlayer !== 1
+  const { preview, handleTap } = usePlacementPreview(gameState.board, !boardLocked, handleSquareClick)
 
   const { character } = useCharacterSelection(gameState.difficulty)
   const { stats, recordWin, recordLoss, recordDraw, updatePlayerName, resetStats } = useLeaderboard()
@@ -262,7 +266,8 @@ export function GomokuGame() {
         <div id="game-board" className="flex w-full justify-center">
           <Board
             board={gameState.board}
-            onSquareClick={handleSquareClick}
+            onSquareClick={handleTap}
+            previewPosition={preview}
             isLastPlaced={isLastPlaced}
             isWinningPosition={isWinningPosition}
             disabled={isAnimating || gameState.status !== 'playing'}

@@ -22,6 +22,7 @@ interface CellProps {
   isStarPoint?: boolean
   currentPlayer?: 1 | 2
   disabled?: boolean
+  isPreview?: boolean
 }
 
 export const Cell = memo(function Cell({
@@ -34,6 +35,7 @@ export const Cell = memo(function Cell({
   isStarPoint = false,
   currentPlayer = 1,
   disabled = false,
+  isPreview = false,
 }: CellProps) {
   const [isAnimating, setIsAnimating] = useState(false)
   const prevPlayerRef = useRef<Player | null>(player)
@@ -81,7 +83,7 @@ export const Cell = memo(function Cell({
   const colLetter = String.fromCharCode(65 + col) // A-O
   const rowNumber = row + 1 // 1-15
   const cellNotation = `${colLetter}${rowNumber}`
-  const cellState = player === null ? 'empty' : player === 1 ? 'black stone' : 'white stone'
+  const cellState = player === null ? (isPreview ? 'empty, tap again to place' : 'empty') : player === 1 ? 'black stone' : 'white stone'
   const ariaLabel = `Cell ${cellNotation}, ${cellState}${isLastPlaced ? ', last move' : ''}${isWinning ? ', winning position' : ''}`
 
   // Calculate grid line positions
@@ -163,6 +165,19 @@ export const Cell = memo(function Cell({
             ${currentPlayer === 1 ? 'go-stone-black' : 'go-stone-white'}
             pointer-events-none
           `}
+        />
+      )}
+
+      {/* Touch preview: static, semi-transparent, sagebrush ring; second tap places it */}
+      {isPreview && player === null && (
+        <div
+          className={`
+            absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+            w-[75%] h-[75%] rounded-full pointer-events-none z-10
+            go-stone-touch-preview
+            ${currentPlayer === 1 ? 'go-stone-black' : 'go-stone-white'}
+          `}
+          data-testid="stone-preview"
         />
       )}
 

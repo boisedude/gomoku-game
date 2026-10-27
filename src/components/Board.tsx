@@ -5,7 +5,7 @@
  */
 
 import { memo } from 'react'
-import type { Board as BoardType } from '@/types/gomoku.types'
+import type { Board as BoardType, Position } from '@/types/gomoku.types'
 import { BOARD_SIZE } from '@/types/gomoku.types'
 import { Cell } from './Cell'
 
@@ -16,6 +16,8 @@ interface BoardProps {
   isWinningPosition: (row: number, col: number) => boolean
   disabled?: boolean
   currentPlayer?: 1 | 2
+  /** Touch screens: the intersection awaiting a second tap */
+  previewPosition?: Position | null
 }
 
 // Star points (hoshi) positions for a 15x15 board
@@ -33,6 +35,7 @@ export const Board = memo(function Board({
   isWinningPosition,
   disabled = false,
   currentPlayer = 1,
+  previewPosition = null,
 }: BoardProps) {
   const columnLabels = Array.from({ length: BOARD_SIZE }, (_, i) =>
     String.fromCharCode(65 + i)
@@ -99,6 +102,7 @@ export const Board = memo(function Board({
                       isWinning={isWinningPosition(rowIndex, colIndex)}
                       isStarPoint={isStarPoint(rowIndex, colIndex)}
                       currentPlayer={currentPlayer}
+                      isPreview={previewPosition?.row === rowIndex && previewPosition?.col === colIndex}
                       disabled={disabled}
                     />
                   </div>

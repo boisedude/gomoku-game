@@ -70,7 +70,7 @@ function getSteps(opponent: string): TutorialStep[] {
     },
     {
       title: 'How a turn works',
-      description: `Click any empty intersection to place a stone. Stones never move once placed. Then ${opponent} takes a turn.`,
+      description: `Click any empty intersection to place a stone. On a touch screen, tap twice: the first tap previews the stone, and tapping the same spot again places it. Stones never move once placed. Then ${opponent} takes a turn.`,
       tip: 'The centre of the board is a strong place to start.',
     },
     {

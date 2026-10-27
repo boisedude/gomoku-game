@@ -115,8 +115,16 @@
   transition: opacity 0.15s ease-out;
 }
 
-.go-cell:hover .go-stone-preview {
-  opacity: 0.5;
+@media (hover: hover) {
+  .go-cell:hover .go-stone-preview {
+    opacity: 0.5;
+  }
+}
+
+/* Touch preview: no animation, no transition */
+.go-stone-touch-preview {
+  opacity: 0.6;
+  box-shadow: 0 0 0 2px hsl(var(--primary));
 }
 
 .go-cell {
