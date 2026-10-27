@@ -21,7 +21,6 @@ import { useCharacterSelection } from '@/hooks/useCharacterSelection'
 import { getInitialDifficulty, hasCharacterParam, difficultyToCharacterId } from '@/lib/characterUrl'
 import { getCharacterById } from '@shared/characters'
 import type { Difficulty } from '@/types/gomoku.types'
-import { reportArcadeResult } from '@/lib/arcadeResult'
 import { STORAGE_KEY_TUTORIAL_COMPLETED, TUTORIAL_SHOW_DELAY_MS } from '@/constants/gameConstants'
 
 export function GomokuGame() {
@@ -92,12 +91,10 @@ export function GomokuGame() {
           // Player wins
           playVictory()
           recordWin(0, totalMoves, false)
-          reportArcadeResult(gameState.difficulty, 1)
         } else if (gameState.winner === 2) {
           // AI wins
           playDefeat()
           recordLoss(totalMoves)
-          reportArcadeResult(gameState.difficulty, 2)
         }
       } else if (gameState.status === 'draw') {
         playDraw()
@@ -114,7 +111,6 @@ export function GomokuGame() {
   }, [
     gameState.status,
     gameState.winner,
-    gameState.difficulty,
     gameState.moveHistory.length,
     playVictory,
     playDefeat,
